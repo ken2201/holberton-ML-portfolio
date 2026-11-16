@@ -1,1 +1,135 @@
-j
+# JobPilot: Portfolio Project Pitch
+
+Author: Ken Kersy NDAYISHIMIYE · Holberton School Toulouse · Machine Learning track · November 11, 2026
+
+## Project Name
+
+**JobPilot**: your job search copilot.
+
+## Authors
+
+**Ken Kersy NDAYISHIMIYE**, working alone on the project. Responsible for everything: design, back-end, front-end, machine learning module, tests, local deployment and documentation.
+
+## Introduction
+
+Looking for a job means juggling dozens of offers, follow-ups and statuses scattered across emails and spreadsheets. Candidates quickly lose track of the big picture and do not always know which offers give them the best chances.
+
+JobPilot centralizes job application tracking and adds a machine-learning-based decision aid: for each pasted job offer, the application extracts the required skills, compares them with the candidate's profile, then displays a **compatibility score** and the list of **missing skills**.
+
+**Goal**: help a candidate know where they stand and where to focus their efforts, without any of their data leaving their machine.
+
+## Description: the user experience
+
+1. The user arrives on the application. They can try it immediately through a **demo mode** (guest account with sample data, nothing to fill in) or create an account.
+2. They fill in their **profile**: skills and resume text.
+3. They **paste the text of a job offer**. The application extracts the required skills, then displays the compatibility score and the missing skills.
+4. They save the application, which appears on a **kanban board** (To apply, Sent, Interview, Rejected, Offer). They move it forward by drag and drop.
+5. They generate a pre-filled **cover letter draft**, which they review and edit themselves.
+
+### MVP features
+
+1. Authentication and demo mode
+2. Application management (create, read, update, delete)
+3. Kanban board by status
+4. Offer analysis: skill extraction, compatibility score, missing skills (ML module)
+5. Cover letter pre-filled from a template
+
+### Out of scope (future improvements)
+
+Email reminders, detailed statistics, automatic resume import, browser extension, online deployment.
+
+## Machine Learning Component
+
+The ML module is the technical core of the project. It follows an experimental approach with quantified comparisons:
+
+| Approach | Description | Role |
+|---|---|---|
+| Baseline | Skills dictionary + TF-IDF and cosine similarity | Point of comparison |
+| Main model | Local embeddings (multilingual-e5-small) to measure the semantic similarity between the offer's requirements and the profile | Selected approach if it performs better |
+| Bonus (if time allows) | Small classifier (logistic regression) trained on the annotated offers to decide whether an expression is a skill | Improvement |
+
+**Evaluation**: a set of 30 to 40 hand-annotated job offers (list of expected skills). Precision, recall and F1 are measured for each approach, the similarity threshold is tuned on this data, and the consistency of the compatibility score is checked on about 20 resume / offer pairs.
+
+All processing runs locally: no external API is needed in version 1.
+
+## Data
+
+| Data | Collection | Storage |
+|---|---|---|
+| Accounts (email, hashed password) | User input | PostgreSQL |
+| Profile and resume (text, skills) | User input | PostgreSQL |
+| Applications (company, position, status, notes, offer text) | User input and copy-paste | PostgreSQL |
+| Extracted skills and scores | Computed by the application | PostgreSQL |
+| Evaluation set: 30 to 40 annotated offers | Public offers or open datasets (license checked), manual annotation | Versioned files in the repository |
+
+**Collection principles**: the application only collects what it needs. No scraping of job sites: offers are pasted by the user. Every query is filtered by user to guarantee data isolation.
+
+## Ethics
+
+- **Privacy**: a resume and job offers are personal data. Everything is processed locally and no data is sent to a third party in version 1.
+- **User control**: real deletion of the account and all associated data, strict isolation between users, demo mode without personal data.
+- **Fairness**: the score is meant for the candidate, on their own profile. The tool is not designed to sort or rank candidates on the recruiter side, which avoids the risk of automated discrimination.
+- **Acknowledged limits**: a score does not measure a person's worth, and a skill can be worded differently from the dictionary. The application states this on screen and presents the score as an indication, not a verdict.
+- **Transparency**: the letter is a draft, never sent automatically.
+- **Security**: hashed passwords, input validation, protected routes, secrets kept out of the Git repository.
+- **Dataset bias**: the annotated offers are limited in number and in fields. This limit is documented and the results are presented with this caveat.
+
+## Platform
+
+Web application, usable on desktop and mobile (responsive interface). Launched locally with Docker Compose (`docker compose up`), compatible with all operating systems.
+
+### Tech stack
+
+| Layer | Choice |
+|---|---|
+| Back-end | Python 3.12 + FastAPI |
+| Database | PostgreSQL, SQLAlchemy, Alembic |
+| Authentication | JWT, bcrypt or argon2 hashing |
+| Machine learning | scikit-learn, sentence-transformers |
+| Front-end | React |
+| Tests | pytest |
+| Containerization and CI | Docker Compose, GitHub Actions |
+
+Python is used end to end: the ML module is called directly from the API, with no separate service.
+
+## Accepted Shortcuts
+
+| Shortcut | Correction plan |
+|---|---|
+| Local deployment only (demo through video and `docker compose up`) | Online deployment (Render, Railway) |
+| Offers pasted by hand | Import by link, if the sites' terms of use allow it |
+| Letter generated from a template | LLM-based generation, as an option |
+| Annotated set limited to 30-40 offers | Enlarge the set to make the evaluation more reliable |
+| A single embedding model | Compare other models |
+
+## Planned Improvements
+
+**Version 2**: optional integration of an LLM API for skill extraction and cover letter writing. It would be evaluated on the same annotated set as the local approach, with automatic fallback to local mode if the service is unavailable. The "intelligent" functions are isolated behind a common interface so that this addition does not require a redesign.
+
+## Schedule: approximately 1 month
+
+The project is planned over approximately one month. The tasks are split into weekly steps, with their dependencies.
+
+| Week | Tasks | Deliverable | Depends on |
+|---|---|---|---|
+| 1 | Writing and submitting the Pitch, user stories, mockups, database schema, architecture diagram, creation of the task board, **contacting the mentor**, start of offer annotation | Pitch submitted, board created | Nothing (starting point). The database schema conditions weeks 2 and 3. |
+| 2 | Docker Compose, authentication, applications CRUD, first tests | Basic working API | Week 1 (database schema, user stories) |
+| 3 | **ML module** (risk point): baseline, embeddings, evaluation, threshold tuning | Evaluated ML module | Week 1 (annotated set). Independent of week 2: can progress in parallel. |
+| 4 | Kanban front-end, score integration, pre-filled letter, demo mode | Complete usable user journey | Week 2 (CRUD for the kanban) and week 3 (ML module for the score) |
+| 5 | Tests, GitHub Actions, fixes, finalizing the evaluation | Green CI, quantified results | Weeks 2, 3 and 4 (nothing to test or integrate before) |
+| 6 | README, demo video, presentation, blog post, mentor review, rehearsal | All deliverables | Week 5 (stable product and evaluation results) |
+
+**Risk management**: the ML module is handled in week 3, before the front-end, because it is the most uncertain part. If it falls behind, the front-end scope is reduced rather than the deadline pushed back: the job tracker (CRUD + kanban) remains complete and usable.
+
+**Project management tool**: [Trello / Notion / GitHub Projects], one card per task with subtasks, dependencies and priorities.
+
+## Final Deliverables
+
+- Complete README.md
+- Demo (video, with the project running locally)
+- Presentation
+- Blog post
+
+## Context
+
+This project is carried out as part of the Portfolio Project at Holberton School.
